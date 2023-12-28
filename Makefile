@@ -3,6 +3,7 @@ ifneq ($(wildcard .gitversion),)
 V4L2LOOPBACK_SNAPSHOT_VERSION=$(patsubst v%,%,$(shell git describe --always --dirty 2>/dev/null || shell git describe --always 2>/dev/null || echo snapshot))
 override KCPPFLAGS += -DSNAPSHOT_VERSION='"$(V4L2LOOPBACK_SNAPSHOT_VERSION)"'
 endif
+override KCPPFLAGS += -DMAX_DEVICES=100
 
 include Kbuild
 ifeq ($(KBUILD_MODULES),)
