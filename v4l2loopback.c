@@ -24,6 +24,7 @@
 #include <linux/fs.h>
 #include <linux/capability.h>
 #include <linux/eventpoll.h>
+#include <linux/timer.h>
 #include <media/v4l2-ioctl.h>
 #include <media/v4l2-common.h>
 #include <media/v4l2-device.h>
@@ -37,12 +38,20 @@
 #error This module is not supported on kernels before 4.0.0.
 #endif
 
-#if defined(timer_setup) && defined(from_timer)
+#if defined(timer_setup)
 #define HAVE_TIMER_SETUP
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0)
 #define VFL_TYPE_VIDEO VFL_TYPE_GRABBER
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 2, 0)
+#define timer_delete_sync(timer) del_timer_sync(timer)
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0)
+#define strlcpy(dest, src, len) strscpy(dest, src, len)
 #endif
 
 #define V4L2LOOPBACK_VERSION_CODE                                              \
@@ -2529,7 +2538,7 @@ static void check_timers(struct v4l2_loopback_device *dev)
 #ifdef HAVE_TIMER_SETUP
 static void sustain_timer_clb(struct timer_list *t)
 {
-	struct v4l2_loopback_device *dev = from_timer(dev, t, sustain_timer);
+	struct v4l2_loopback_device *dev = container_of(t, struct v4l2_loopback_device, sustain_timer);
 #else
 static void sustain_timer_clb(unsigned long nr)
 {
@@ -2554,7 +2563,7 @@ static void sustain_timer_clb(unsigned long nr)
 #ifdef HAVE_TIMER_SETUP
 static void timeout_timer_clb(struct timer_list *t)
 {
-	struct v4l2_loopback_device *dev = from_timer(dev, t, timeout_timer);
+	struct v4l2_loopback_device *dev = container_of(t, struct v4l2_loopback_device, timeout_timer);
 #else
 static void timeout_timer_clb(unsigned long nr)
 {
